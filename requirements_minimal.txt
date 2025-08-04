@@ -1,0 +1,18 @@
+# Minimal requirements for memory optimization
+Django==4.2.16
+asgiref==3.8.1
+pytz==2024.2
+sqlparse==0.5.1
+
+# Essential functionality only
+qrcode==7.4.2
+pillow==10.4.0
+geopy==2.4.1
+
+# Production server (memory optimized)
+gunicorn==23.0.0
+whitenoise==6.8.2
+
+# Database
+dj-database-url==2.2.0
+psycopg==3.2.3

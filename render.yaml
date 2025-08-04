@@ -2,23 +2,19 @@ services:
   - type: web
     name: student-attendance-system
     env: python
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --no-input --clear && python manage.py makemigrations student_management_app --noinput && python manage.py migrate --noinput && python setup_production_db.py"
-    startCommand: "gunicorn student_management_system.wsgi:application"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate && python setup_production_db.py"
+    startCommand: "gunicorn student_management_system.wsgi:application --workers 1 --max-requests 1000 --timeout 30"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: DATABASE_URL
-        fromDatabase:
-          name: student-attendance-db
-          property: connectionString
+        value: "postgresql://mu_pr_project_postgre_user:fQNcO7qrQqPqr5X0E0uY95ayZ4dBdc7O@dpg-d285m76uk2gs73etehng-a.oregon-postgres.render.com/mu_pr_project_postgre"
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: false
       - key: WEB_CONCURRENCY
-        value: 4
+        value: 1
+      - key: PYTHONUNBUFFERED
+        value: 1
     autoDeploy: true
-
-databases:
-  - name: student-attendance-db
-    plan: free
