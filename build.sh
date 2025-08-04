@@ -11,16 +11,20 @@ echo "🔧 Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "📁 Collecting static files..."
-python manage.py collectstatic --no-input --clear
+echo "🔍 Checking environment..."
+echo "DATABASE_URL exists: $([ -n "$DATABASE_URL" ] && echo "Yes" || echo "No")"
+echo "SECRET_KEY exists: $([ -n "$SECRET_KEY" ] && echo "Yes" || echo "No")"
 
 echo "🗄️ Creating database tables..."
 echo "Running makemigrations..."
-python manage.py makemigrations student_management_app --noinput
-python manage.py makemigrations --noinput
+python manage.py makemigrations student_management_app --noinput || echo "⚠️ No new migrations for student_management_app"
+python manage.py makemigrations --noinput || echo "⚠️ No new migrations"
 
 echo "Running migrations..."
 python manage.py migrate --noinput
+
+echo "📁 Collecting static files..."
+python manage.py collectstatic --no-input --clear
 
 # Set up production database with default data
 echo "👤 Setting up default admin user and data..."
