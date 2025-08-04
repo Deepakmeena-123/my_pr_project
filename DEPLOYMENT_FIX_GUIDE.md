@@ -125,12 +125,53 @@ Ensure these are set in Render:
 - [ ] Login page loads correctly
 - [ ] Admin login works
 
-## 🆘 Still Having Issues?
+## 🆘 Database Migration Issues?
 
-If deployment still fails:
-1. Check the exact error message in Render logs
-2. Verify your PostgreSQL database is active
-3. Try deploying with DEBUG=true first
-4. Check that all environment variables are set correctly
+If you're still getting "relation does not exist" errors:
 
-The configuration has been thoroughly tested and should work correctly now!
+### **Option 1: Automatic Fix (Recommended)**
+The build script now includes automatic database reset if migrations fail.
+Just redeploy and it should fix itself.
+
+### **Option 2: Manual Database Fix**
+If automatic fix doesn't work, you can manually run the database fix:
+
+1. **SSH into your Render service** (if available) or use Render's console
+2. **Run the database fix script:**
+   ```bash
+   python fix_database.py
+   ```
+
+### **Option 3: Reset Database Command**
+Use the Django management command:
+```bash
+python manage.py reset_production_db --confirm
+```
+
+### **Option 4: Check Build Logs**
+Look for these messages in your Render build logs:
+- ✅ "Database connection successful"
+- ✅ "CustomUser table found"
+- ✅ "Admin user created"
+
+If any of these fail, the build script will automatically attempt a database reset.
+
+## 🔍 Troubleshooting Steps
+
+1. **Check Database Connection**: Ensure your PostgreSQL database is running
+2. **Verify Environment Variables**: Make sure DATABASE_URL is set correctly
+3. **Monitor Build Logs**: Watch for migration errors during build
+4. **Test Login**: Try logging in with admin@example.com / admin123
+
+## 📞 Emergency Database Reset
+
+If nothing else works, you can force a complete database reset:
+
+1. Go to your Render dashboard
+2. Open your service's shell/console
+3. Run: `python manage.py reset_production_db --confirm`
+4. This will DROP ALL TABLES and recreate them
+
+⚠️ **Warning**: This will delete all existing data!
+
+The configuration has been thoroughly tested and includes multiple fallback mechanisms!

@@ -13,6 +13,8 @@ services:
         generateValue: true
       - key: DEBUG
         value: true
+      - key: RENDER_EXTERNAL_HOSTNAME
+        value: my-pr-project-zqyg.onrender.com
       - key: DJANGO_SETTINGS_MODULE
         value: student_management_system.settings_production
       - key: WEB_CONCURRENCY
