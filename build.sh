@@ -9,7 +9,9 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input --clear
 
 # Apply database migrations
-python manage.py migrate
+echo "🗄️ Creating database tables..."
+python manage.py makemigrations --noinput
+python manage.py migrate --noinput
 
 # Set up production database with default data
 echo "👤 Setting up default admin user and data..."
