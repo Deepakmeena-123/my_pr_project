@@ -81,6 +81,18 @@ if DATABASE_URL:
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
     print("Using PostgreSQL database from DATABASE_URL")
+
+    # Run startup migration for free tier (no shell access)
+    if not os.environ.get('SKIP_STARTUP_MIGRATION'):
+        try:
+            import subprocess
+            import sys
+            migration_script = os.path.join(BASE_DIR, 'migrate_on_startup.py')
+            if os.path.exists(migration_script):
+                print("🔧 Running startup migration script...")
+                subprocess.run([sys.executable, migration_script], check=False)
+        except Exception as e:
+            print(f"⚠️ Startup migration failed: {e}")
 else:
     # Development: Use SQLite
     DATABASES = {
