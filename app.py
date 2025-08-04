@@ -13,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 
 # Set Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'student_management_system.settings_production')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'student_management_system.settings')
 
 # Import Django WSGI application
 try:
