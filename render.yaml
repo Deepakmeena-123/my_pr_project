@@ -2,7 +2,7 @@ services:
   - type: web
     name: student-attendance-system
     env: python
-    buildCommand: "chmod +x build.sh && ./build.sh"
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --no-input --clear && python manage.py makemigrations student_management_app --noinput && python manage.py migrate --noinput && python setup_production_db.py"
     startCommand: "gunicorn student_management_system.wsgi:application"
     envVars:
       - key: PYTHON_VERSION
