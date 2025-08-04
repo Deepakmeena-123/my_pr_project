@@ -1,0 +1,150 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Student Management System | Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Standardized Admin CSS -->
+  <link rel="stylesheet" href="{% static 'css/admin-standardized.css' %}">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+
+    {% block custom_css %}
+    {% endblock custom_css %}
+
+</head>
+
+<body class="bg-gray-100 font-sans">
+  <div class="min-h-screen flex">
+
+    <!-- Sidebar -->
+    {% include 'hod_template/sidebar_template.html' with user=user id=id %}
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col">
+      <!-- Top Navigation -->
+      <nav class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <button id="sidebar-toggle" class="lg:hidden text-gray-600 hover:text-gray-900">
+              <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-xl font-semibold text-gray-800">Student Management System | Admin Dashboard</h1>
+          </div>
+
+          <!-- User Menu -->
+          <div class="relative">
+            <button id="user-menu-button" class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 focus:outline-none">
+              <i class="fas fa-cog text-lg"></i>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+              <a href="{% url 'admin_profile' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-user-edit mr-3"></i> Update Profile
+              </a>
+              <div class="border-t border-gray-100"></div>
+              <a href="{% url 'logout_user' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-power-off mr-3"></i> Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Page Header -->
+      <div class="bg-white border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold text-gray-900">
+            {% block page_title %}
+            {% endblock page_title %}
+          </h2>
+          <nav class="flex" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2 text-sm text-gray-500">
+              <li><a href="{% url 'admin_home' %}" class="hover:text-gray-700">Home</a></li>
+              <li><i class="fas fa-chevron-right text-xs"></i></li>
+              <li class="text-gray-900">{% block breadcrumb %}{% endblock %}</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-1 p-6">
+        {% block main_content %}
+        {% endblock main_content %}
+      </div>
+    </div>
+  </div>
+
+
+<!-- Essential JavaScript -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Tailwind-based interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // User menu dropdown
+    const userMenuButton = document.getElementById('user-menu-button');
+    const userMenu = document.getElementById('user-menu');
+
+    if (userMenuButton && userMenu) {
+        userMenuButton.addEventListener('click', function() {
+            userMenu.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!userMenuButton.contains(event.target) && !userMenu.contains(event.target)) {
+                userMenu.classList.add('hidden');
+            }
+        });
+    }
+
+    // Sidebar toggle for mobile
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+
+    if (sidebarToggle && sidebar) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('-translate-x-full');
+        });
+    }
+});
+</script>
+
+{% block custom_js %}
+{% endblock custom_js %}
+
+</body>
+</html>

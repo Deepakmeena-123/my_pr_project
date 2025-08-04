@@ -1,0 +1,237 @@
+{% extends 'student_template/base_template.html' %}
+
+{% block page_title %}
+    Student Home
+{% endblock page_title %}
+
+{% block main_content %}
+
+{% load static %}
+
+<!-- Welcome Section -->
+<div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 mb-8 text-white">
+    <h1 class="text-2xl font-bold mb-2">Welcome back, {{ request.user.first_name }}!</h1>
+    <p class="text-blue-100">Here's your attendance overview and quick actions.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Attendance -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Attendance</p>
+                <p class="text-3xl font-bold text-blue-600">{{ total_attendance }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="{% url 'student_view_attendance' %}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                View Details <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Absent Days -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Absent</p>
+                <p class="text-3xl font-bold text-red-600">{{ attendance_absent }}</p>
+            </div>
+            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-user-times text-red-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="{% url 'student_view_attendance' %}" class="text-sm text-red-600 hover:text-red-800 font-medium">
+                View Details <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Present Days -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Present</p>
+                <p class="text-3xl font-bold text-green-600">{{ attendance_present }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-user-check text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <a href="{% url 'student_view_attendance' %}" class="text-sm text-green-600 hover:text-green-800 font-medium">
+                View Details <i class="fas fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Total Subjects -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-600">Total Subjects</p>
+                <p class="text-3xl font-bold text-purple-600">{{ total_subjects }}</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-book text-purple-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4">
+            <span class="text-sm text-gray-500">Enrolled courses</span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Attendance Overview Chart -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-chart-pie text-blue-600 mr-3"></i>
+            <h3 class="text-lg font-semibold text-gray-900">Attendance Overview</h3>
+        </div>
+        <div class="h-64">
+            <canvas id="pieChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- Subject-wise Attendance Chart -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-chart-bar text-green-600 mr-3"></i>
+            <h3 class="text-lg font-semibold text-gray-900">Subject-wise Attendance</h3>
+        </div>
+        <div class="h-64">
+            <canvas id="barChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions Section -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div class="flex items-center mb-6">
+        <i class="fas fa-bolt text-yellow-600 mr-3"></i>
+        <h3 class="text-lg font-semibold text-gray-900">Quick Actions</h3>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- QR Attendance -->
+        <a href="{% url 'student_upload_qr' %}"
+           class="flex flex-col items-center p-6 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors group">
+            <div class="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-green-600 transition-colors">
+                <i class="fas fa-qrcode text-white text-xl"></i>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">QR Attendance</h4>
+            <p class="text-sm text-gray-600 text-center">Scan QR code to mark attendance</p>
+        </a>
+
+        <!-- View Attendance -->
+        <a href="{% url 'student_view_attendance' %}"
+           class="flex flex-col items-center p-6 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors group">
+            <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-600 transition-colors">
+                <i class="fas fa-calendar-alt text-white text-xl"></i>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">View Attendance</h4>
+            <p class="text-sm text-gray-600 text-center">Check your attendance records</p>
+        </a>
+
+        <!-- My Profile -->
+        <a href="{% url 'student_profile' %}"
+           class="flex flex-col items-center p-6 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors group">
+            <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-600 transition-colors">
+                <i class="fas fa-user-circle text-white text-xl"></i>
+            </div>
+            <h4 class="font-semibold text-gray-900 mb-1">My Profile</h4>
+            <p class="text-sm text-gray-600 text-center">Update your profile information</p>
+        </a>
+    </div>
+</div>
+    </div>
+</section>
+
+{% endblock main_content %}
+
+{% block custom_js %}
+<script>
+    $(document).ready(function(){
+        var pieData = {
+            labels: [
+                'ABSENT', 
+                'PRESENT', 
+            ],
+            datasets: [
+                {
+                    data: [{{ attendance_absent }}, {{ attendance_present }}],
+                    backgroundColor : ['#f56954', '#00a65a'],
+                }
+            ]
+        }
+        var pieChartCanvas = $('#pieChart').get(0).getContext('2d')
+        var pieData = pieData;
+        var pieOptions = {
+            maintainAspectRatio : false,
+            responsive : true,
+        }
+        
+        var pieChart = new Chart(pieChartCanvas, {
+            type: 'pie',
+            data: pieData,
+            options: pieOptions      
+        })
+
+        var subjects = {{ subject_name|safe }}
+        var data_present = {{ data_present }}
+        var data_absent = {{ data_absent }}
+
+        var areaChartData = {
+            labels  : subjects,
+            datasets: [
+                {
+                    label               : 'Present in Class',
+                    backgroundColor     : 'rgba(60,141,188,0.9)',
+                    borderColor         : 'rgba(60,141,188,0.8)',
+                    pointRadius          : false,
+                    pointColor          : '#3b8bba',
+                    pointStrokeColor    : 'rgba(60,141,188,1)',
+                    pointHighlightFill  : '#fff',
+                    pointHighlightStroke: 'rgba(60,141,188,1)',
+                    data                : data_present
+                },
+                {
+                    label               : 'Absent in Class',
+                    backgroundColor     : 'rgba(210, 214, 222, 1)',
+                    borderColor         : 'rgba(210, 214, 222, 1)',
+                    pointRadius         : false,
+                    pointColor          : 'rgba(210, 214, 222, 1)',
+                    pointStrokeColor    : '#c1c7d1',
+                    pointHighlightFill  : '#fff',
+                    pointHighlightStroke: 'rgba(220,220,220,1)',
+                    data                : data_absent
+                },
+            ]
+        }
+
+
+        var barChartCanvas = $('#barChart').get(0).getContext('2d')
+        var barChartData = jQuery.extend(true, {}, areaChartData)
+        var temp1 = areaChartData.datasets[0]
+        barChartData.datasets[0] = temp1
+
+        var barChartOptions = {
+            responsive              : true,
+            maintainAspectRatio     : false,
+            datasetFill             : false
+        }
+
+        var barChart = new Chart(barChartCanvas, {
+            type: 'bar', 
+            data: barChartData,
+            options: barChartOptions
+        })
+    })
+</script>
+{% endblock custom_js %}

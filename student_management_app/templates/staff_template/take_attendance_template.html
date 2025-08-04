@@ -1,0 +1,954 @@
+{% extends 'staff_template/base_template.html' %}
+
+{% block page_title %}
+Take Attendance
+{% endblock page_title %}
+
+{% block breadcrumb %}
+Take Attendance
+{% endblock breadcrumb %}
+
+{% block main_content %}
+{% load static %}
+
+<!-- Take Attendance Interface -->
+<div class="space-y-6">
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">
+                <div class="flex">
+                    <i class="fas fa-exclamation-circle mt-0.5 mr-2"></i>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+            {% elif message.tags == 'success' %}
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md mb-4">
+                <div class="flex">
+                    <i class="fas fa-check-circle mt-0.5 mr-2"></i>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <!-- Method Selection -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Choose Attendance Method</h3>
+            <p class="text-sm text-gray-600 mt-1">Select how you want to take attendance</p>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Manual Attendance Option -->
+                <div class="border border-gray-200 rounded-lg p-6 hover:border-blue-300 hover:shadow-md transition-all cursor-pointer" id="manualOption">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-clipboard-list text-blue-600 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2">Manual Marking</h4>
+                        <p class="text-sm text-gray-600 mb-4">Mark attendance manually for each student</p>
+                        <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                            Select Manual
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Code Attendance Option -->
+                <div class="border border-gray-200 rounded-lg p-6 hover:border-green-300 hover:shadow-md transition-all cursor-pointer" id="qrOption">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-qrcode text-green-600 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-semibold text-gray-900 mb-2">QR Code Scanning</h4>
+                        <p class="text-sm text-gray-600 mb-4">Students scan QR code to mark attendance</p>
+                        <button type="button" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                            Select QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Attendance Section -->
+    <div id="manualSection" class="bg-white rounded-lg shadow-sm border border-gray-200" style="display: none;">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Manual Attendance</h3>
+            <p class="text-sm text-gray-600 mt-1">Select criteria and mark attendance manually</p>
+        </div>
+
+        <div class="p-6">
+            <form id="manualAttendanceForm" method="POST">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label for="manual_subject" class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <select name="subject" id="manual_subject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="manual_session_year" class="block text-sm font-medium text-gray-700 mb-2">Session Year</label>
+                        <select name="session_year" id="manual_session_year" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                            <option value="">Select Session Year</option>
+                            {% for session_year in session_years %}
+                            <option value="{{ session_year.id }}">{{ session_year.session_start_year }} - {{ session_year.session_end_year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="manual_attendance_date" class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                        <input type="date" name="attendance_date" id="manual_attendance_date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                </div>
+
+                <div class="flex justify-end mb-6">
+                    <button type="button" id="fetchStudentsBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center">
+                        <i class="fas fa-users mr-2"></i>
+                        Fetch Students
+                    </button>
+                </div>
+
+                <!-- Students List -->
+                <div id="studentsSection" style="display: none;">
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h4 class="text-lg font-semibold text-gray-900">Mark Attendance</h4>
+                            <div class="flex space-x-2">
+                                <button type="button" id="markAllPresent" class="bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-4 rounded-md transition-colors duration-200 text-sm">
+                                    <i class="fas fa-check-square mr-1"></i>
+                                    Mark All Present
+                                </button>
+                                <button type="button" id="markAllAbsent" class="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-md transition-colors duration-200 text-sm">
+                                    <i class="fas fa-times-square mr-1"></i>
+                                    Mark All Absent
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="studentsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                            <!-- Students will be populated here -->
+                        </div>
+
+                        <div class="flex justify-end pt-4 border-t border-gray-200">
+                            <button type="button" id="saveAttendanceBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center">
+                                <i class="fas fa-save mr-2"></i>
+                                Save Attendance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- QR Code Section -->
+    <div id="qrSection" class="bg-white rounded-lg shadow-sm border border-gray-200" style="display: none;">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">QR Code Attendance</h3>
+            <p class="text-sm text-gray-600 mt-1">Generate QR code for students to scan</p>
+        </div>
+
+        <div class="p-6">
+            <form id="qrAttendanceForm" method="POST">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="qr_subject" class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <select name="subject" id="qr_subject" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.subject_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="qr_session_year" class="block text-sm font-medium text-gray-700 mb-2">Session Year</label>
+                        <select name="session_year" id="qr_session_year" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                            <option value="">Select Session Year</option>
+                            {% for session_year in session_years %}
+                            <option value="{{ session_year.id }}">{{ session_year.session_start_year }} - {{ session_year.session_end_year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label for="expiry_time" class="block text-sm font-medium text-gray-700 mb-2">QR Code Expiry (minutes)</label>
+                        <input type="number" name="expiry_time" id="expiry_time" value="30" min="1" max="120" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                        <p class="text-xs text-gray-500 mt-1">How long the QR code will be valid</p>
+                    </div>
+
+                    <div>
+                        <label for="radius" class="block text-sm font-medium text-gray-700 mb-2">Allowed Radius (meters)</label>
+                        <input type="number" name="radius" id="radius" value="100" min="10" max="50000" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Students must be within this distance</p>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="enableLocation" name="enableLocation" checked class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <label for="enableLocation" class="ml-2 block text-sm text-gray-700">Enable Location Verification</label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Students must be within the specified radius to mark attendance</p>
+                </div>
+
+                <!-- Location Input Section -->
+                <div id="locationSection" class="mb-6 border border-gray-200 rounded-lg p-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Location Settings</h4>
+
+                    <!-- Location Method Selection -->
+                    <div class="mb-4">
+                        <div class="flex items-center space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="locationMethod" value="auto" id="autoLocation" checked class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                                <span class="ml-2 text-sm text-gray-700">Auto-detect my location</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="locationMethod" value="manual" id="manualLocation" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                                <span class="ml-2 text-sm text-gray-700">Enter location manually</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Auto Location Status -->
+                    <div id="autoLocationDiv" class="mb-4">
+                        <div id="locationStatus" class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Click "Generate QR Code" to auto-detect your location
+                        </div>
+                    </div>
+
+                    <!-- Manual Location Input -->
+                    <div id="manualLocationDiv" class="mb-4" style="display: none;">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="manualLatitude" class="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                                <input type="number" id="manualLatitude" step="any" placeholder="e.g., 40.7128" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <p class="text-xs text-gray-500 mt-1">Decimal degrees (e.g., 40.7128)</p>
+                            </div>
+                            <div>
+                                <label for="manualLongitude" class="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                                <input type="number" id="manualLongitude" step="any" placeholder="e.g., -74.0060" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                <p class="text-xs text-gray-500 mt-1">Decimal degrees (e.g., -74.0060)</p>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <button type="button" id="validateLocationBtn" class="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded border border-blue-200 hover:bg-blue-100">
+                                <i class="fas fa-map-marker-alt mr-1"></i>Validate Coordinates
+                            </button>
+                            <span id="locationValidation" class="ml-2 text-sm"></span>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <strong>Tip:</strong> You can get coordinates from Google Maps by right-clicking on a location and selecting the coordinates.
+                        </div>
+                    </div>
+
+                    <!-- Current Location Display -->
+                    <div id="currentLocationDisplay" class="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                        <strong>Current Location:</strong> <span id="currentCoordinates">Not set</span>
+                    </div>
+                </div>
+
+                <!-- Hidden fields for location data -->
+                <input type="hidden" id="latitude" name="latitude" />
+                <input type="hidden" id="longitude" name="longitude" />
+
+                <div class="mb-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="enableNetwork" name="enableNetwork" checked class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <label for="enableNetwork" class="ml-2 block text-sm text-gray-700">Enable Network Verification</label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Requires students to be on the same network (IP-based verification)</p>
+                </div>
+
+                <div class="flex justify-end mb-6">
+                    <button type="button" id="generateQRBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center">
+                        <i class="fas fa-qrcode mr-2"></i>
+                        Generate QR Code
+                    </button>
+                </div>
+
+                <!-- QR Code Display -->
+                <div id="qrCodeSection" style="display: none;">
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="text-center">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4">QR Code for Attendance</h4>
+                            <div id="qrCodeDisplay" class="inline-block p-4 bg-white border border-gray-300 rounded-lg shadow-sm">
+                                <!-- QR Code will be displayed here -->
+                            </div>
+                            <div class="mt-4">
+                                <p class="text-sm text-gray-600">Students can scan this QR code to mark their attendance</p>
+                                <div id="qrTimer" class="text-lg font-semibold text-red-600 mt-2">
+                                    <!-- Timer will be displayed here -->
+                                </div>
+                            </div>
+
+                            <!-- Download and Share Buttons -->
+                            <div class="mt-6 pt-4 border-t border-gray-200">
+                                <h5 class="text-sm font-semibold text-gray-700 mb-3 text-center">QR Code Actions</h5>
+                                <div class="flex flex-wrap justify-center gap-3">
+                                    <button id="downloadQRBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm">
+                                        <i class="fas fa-download"></i>
+                                        Download QR
+                                    </button>
+                                    <button id="shareQRBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm">
+                                        <i class="fas fa-share-alt"></i>
+                                        Share QR
+                                    </button>
+                                    <button id="printQRBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm">
+                                        <i class="fas fa-print"></i>
+                                        Print QR
+                                    </button>
+                                    <button id="copyLinkBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm">
+                                        <i class="fas fa-link"></i>
+                                        Copy Link
+                                    </button>
+                                </div>
+
+                                <!-- QR Code Information -->
+                                <div class="mt-4 p-3 bg-gray-50 rounded-lg text-left">
+                                    <h6 class="text-xs font-semibold text-gray-700 mb-2">QR Code Details:</h6>
+                                    <div class="text-xs text-gray-600 space-y-1">
+                                        <div><strong>Subject:</strong> <span id="qrInfoSubject"></span></div>
+                                        <div><strong>Token:</strong> <span id="qrInfoToken" class="font-mono"></span></div>
+                                        <div><strong>Direct Link:</strong> <span id="qrInfoLink" class="font-mono break-all"></span></div>
+                                        <div><strong>Generated:</strong> <span id="qrInfoGenerated"></span></div>
+                                        <div><strong>Expires:</strong> <span id="qrInfoExpires"></span></div>
+                                        <div><strong>Location Required:</strong> <span id="qrInfoLocation"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Manual Attendance Option -->
+                            <div class="mt-6 pt-4 border-t border-gray-200">
+                                <button type="button" id="switchToManualBtn" class="bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                                    <i class="fas fa-clipboard-list mr-2"></i>
+                                    Switch to Manual Attendance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock main_content %}
+
+{% block custom_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+    // Get elements
+    const manualOption = document.getElementById("manualOption");
+    const qrOption = document.getElementById("qrOption");
+    const manualSection = document.getElementById("manualSection");
+    const qrSection = document.getElementById("qrSection");
+
+    // Manual attendance elements
+    const fetchStudentsBtn = document.getElementById("fetchStudentsBtn");
+    const studentsSection = document.getElementById("studentsSection");
+    const studentsList = document.getElementById("studentsList");
+    const markAllPresent = document.getElementById("markAllPresent");
+    const markAllAbsent = document.getElementById("markAllAbsent");
+    const saveAttendanceBtn = document.getElementById("saveAttendanceBtn");
+
+    // QR code elements
+    const generateQRBtn = document.getElementById("generateQRBtn");
+    const qrCodeSection = document.getElementById("qrCodeSection");
+    const switchToManualBtn = document.getElementById("switchToManualBtn");
+
+    // Method selection
+    manualOption.addEventListener('click', function() {
+        manualSection.style.display = 'block';
+        qrSection.style.display = 'none';
+        manualOption.classList.add('border-blue-500', 'bg-blue-50');
+        qrOption.classList.remove('border-green-500', 'bg-green-50');
+    });
+
+    qrOption.addEventListener('click', function() {
+        qrSection.style.display = 'block';
+        manualSection.style.display = 'none';
+        qrOption.classList.add('border-green-500', 'bg-green-50');
+        manualOption.classList.remove('border-blue-500', 'bg-blue-50');
+    });
+
+    // Switch from QR to Manual
+    switchToManualBtn.addEventListener('click', function() {
+        // Copy values from QR form to manual form
+        document.getElementById('manual_subject').value = document.getElementById('qr_subject').value;
+        document.getElementById('manual_session_year').value = document.getElementById('qr_session_year').value;
+        document.getElementById('manual_attendance_date').value = new Date().toISOString().split('T')[0];
+
+        // Switch to manual section
+        manualSection.style.display = 'block';
+        qrSection.style.display = 'none';
+        manualOption.classList.add('border-blue-500', 'bg-blue-50');
+        qrOption.classList.remove('border-green-500', 'bg-green-50');
+
+        // Fetch students automatically
+        fetchStudents();
+    });
+
+    // Fetch students for manual attendance
+    fetchStudentsBtn.addEventListener('click', fetchStudents);
+
+    function fetchStudents() {
+        const subjectId = document.getElementById('manual_subject').value;
+        const sessionYearId = document.getElementById('manual_session_year').value;
+        const attendanceDate = document.getElementById('manual_attendance_date').value;
+
+        if (!subjectId || !sessionYearId || !attendanceDate) {
+            showMessage('Please fill all fields', 'error');
+            return;
+        }
+
+        fetchStudentsBtn.disabled = true;
+        fetchStudentsBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
+
+        fetch('{% url "get_students" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: `subject=${subjectId}&session_year=${sessionYearId}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (Array.isArray(data)) {
+                displayStudents(data);
+                studentsSection.style.display = 'block';
+                showMessage(`${data.length} students loaded successfully`, 'success');
+            } else if (data.error) {
+                showMessage(data.error, 'error');
+            } else if (data.message) {
+                showMessage(data.message, 'error');
+            } else {
+                showMessage('No students found', 'error');
+            }
+            fetchStudentsBtn.disabled = false;
+            fetchStudentsBtn.innerHTML = '<i class="fas fa-users mr-2"></i>Fetch Students';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error fetching students', 'error');
+            fetchStudentsBtn.disabled = false;
+            fetchStudentsBtn.innerHTML = '<i class="fas fa-users mr-2"></i>Fetch Students';
+        });
+    }
+
+    function displayStudents(students) {
+        studentsList.innerHTML = '';
+
+        students.forEach(student => {
+            const studentCard = document.createElement('div');
+            studentCard.className = 'bg-gray-50 border border-gray-200 rounded-lg p-4';
+            studentCard.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h5 class="font-medium text-gray-900">${student.name}</h5>
+                        <p class="text-sm text-gray-600">ID: ${student.id}</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="status_${student.id}" value="1" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                            <span class="ml-2 text-sm text-green-700">Present</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="status_${student.id}" value="0" class="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300" checked>
+                            <span class="ml-2 text-sm text-red-700">Absent</span>
+                        </label>
+                    </div>
+                </div>
+                <input type="hidden" name="student_id" value="${student.id}">
+            `;
+            studentsList.appendChild(studentCard);
+        });
+    }
+
+    // Mark all present/absent
+    markAllPresent.addEventListener('click', function() {
+        document.querySelectorAll('input[type="radio"][value="1"]').forEach(radio => {
+            radio.checked = true;
+        });
+    });
+
+    markAllAbsent.addEventListener('click', function() {
+        document.querySelectorAll('input[type="radio"][value="0"]').forEach(radio => {
+            radio.checked = true;
+        });
+    });
+
+    // Save attendance
+    saveAttendanceBtn.addEventListener('click', function() {
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        formData.append('subject_id', document.getElementById('manual_subject').value);
+        formData.append('session_year_id', document.getElementById('manual_session_year').value);
+        formData.append('attendance_date', document.getElementById('manual_attendance_date').value);
+
+        const studentInputs = document.querySelectorAll('input[name="student_id"]');
+        const studentData = [];
+
+        studentInputs.forEach(input => {
+            const studentId = input.value;
+            const statusRadio = document.querySelector(`input[name="status_${studentId}"]:checked`);
+            if (statusRadio) {
+                studentData.push({
+                    id: studentId,
+                    status: parseInt(statusRadio.value)
+                });
+            }
+        });
+
+        formData.append('student_ids', JSON.stringify(studentData));
+
+        // Debug logging
+        console.log('Sending attendance data:');
+        console.log('- subject_id:', document.getElementById('manual_subject').value);
+        console.log('- session_year_id:', document.getElementById('manual_session_year').value);
+        console.log('- attendance_date:', document.getElementById('manual_attendance_date').value);
+        console.log('- student_ids:', JSON.stringify(studentData));
+
+        saveAttendanceBtn.disabled = true;
+        saveAttendanceBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+
+        fetch('{% url "save_attendance_data" %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log('Save attendance response:', data);
+            if (data === "OK") {
+                showMessage('Attendance saved successfully!', 'success');
+                // Reset form
+                studentsSection.style.display = 'none';
+                studentsList.innerHTML = '';
+            } else {
+                showMessage(`Error saving attendance: ${data}`, 'error');
+                console.error('Save error:', data);
+            }
+            saveAttendanceBtn.disabled = false;
+            saveAttendanceBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Attendance';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error saving attendance', 'error');
+            saveAttendanceBtn.disabled = false;
+            saveAttendanceBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Attendance';
+        });
+    });
+
+    // QR Code generation
+    generateQRBtn.addEventListener('click', function() {
+        const subjectId = document.getElementById('qr_subject').value;
+        const sessionYearId = document.getElementById('qr_session_year').value;
+        const expiryTime = document.getElementById('expiry_time').value;
+        const radius = document.getElementById('radius').value;
+        const enableLocation = document.getElementById('enableLocation').checked;
+        const enableNetwork = document.getElementById('enableNetwork').checked;
+
+        if (!subjectId || !sessionYearId) {
+            showMessage('Please select subject and session year', 'error');
+            return;
+        }
+
+        // Get location if enabled
+        if (enableLocation) {
+            const locationMethod = document.querySelector('input[name="locationMethod"]:checked').value;
+
+            if (locationMethod === 'auto') {
+                // Auto-detect location
+                document.getElementById('locationStatus').innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Detecting your location...';
+
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('latitude').value = position.coords.latitude;
+                    document.getElementById('longitude').value = position.coords.longitude;
+
+                    // Update status and display
+                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-check-circle text-green-600 mr-1"></i>Location detected successfully';
+                    document.getElementById('currentCoordinates').textContent =
+                        position.coords.latitude.toFixed(6) + ', ' + position.coords.longitude.toFixed(6) +
+                        ' (±' + Math.round(position.coords.accuracy) + 'm accuracy)';
+
+                    generateQR();
+                }, function(error) {
+                    document.getElementById('locationStatus').innerHTML = '<i class="fas fa-exclamation-triangle text-red-600 mr-1"></i>Failed to detect location';
+                    showMessage('Location access required for QR generation. Please enable location or use manual input.', 'error');
+                });
+            } else {
+                // Manual location input
+                const manualLat = document.getElementById('manualLatitude').value;
+                const manualLon = document.getElementById('manualLongitude').value;
+
+                if (!manualLat || !manualLon) {
+                    showMessage('Please enter both latitude and longitude coordinates', 'error');
+                    return;
+                }
+
+                // Validate coordinates
+                const lat = parseFloat(manualLat);
+                const lon = parseFloat(manualLon);
+
+                if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+                    showMessage('Please enter valid coordinates (Latitude: -90 to 90, Longitude: -180 to 180)', 'error');
+                    return;
+                }
+
+                document.getElementById('latitude').value = lat;
+                document.getElementById('longitude').value = lon;
+                document.getElementById('currentCoordinates').textContent = lat.toFixed(6) + ', ' + lon.toFixed(6) + ' (manually entered)';
+
+                generateQR();
+            }
+        } else {
+            // No location verification
+            document.getElementById('currentCoordinates').textContent = 'Location verification disabled';
+            generateQR();
+        }
+
+        function generateQR() {
+            generateQRBtn.disabled = true;
+            generateQRBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
+
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+            formData.append('subject', subjectId);
+            formData.append('session_year', sessionYearId);
+            formData.append('expiry_time', expiryTime);
+            formData.append('radius', radius);
+            formData.append('latitude', document.getElementById('latitude').value);
+            formData.append('longitude', document.getElementById('longitude').value);
+            if (enableLocation) formData.append('enableLocation', 'on');
+            if (enableNetwork) formData.append('enableNetwork', 'on');
+
+            fetch('{% url "staff_generate_qr" %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Display QR code image
+                    document.getElementById('qrCodeDisplay').innerHTML = `
+                        <img id="qrCodeImage" src="${data.qr_code_url}" alt="QR Code" class="max-w-full h-auto" style="max-width: 300px;">
+                    `;
+                    qrCodeSection.style.display = 'block';
+
+                    // Store QR data globally for download/share functions
+                    window.currentQRData = {
+                        imageUrl: data.qr_code_url,
+                        token: data.token,
+                        subject: document.getElementById('subject').options[document.getElementById('subject').selectedIndex].text,
+                        expiry: data.expiry_time,
+                        generated: new Date().toLocaleString(),
+                        locationRequired: document.getElementById('enableLocation').checked,
+                        directLink: data.qr_data || `${window.location.origin}/scan-attendance/?token=${data.token}`
+                    };
+
+                    // Update QR info display
+                    updateQRInfo();
+
+                    // Start timer
+                    startQRTimer(parseInt(expiryTime) * 60);
+
+                    showMessage('QR Code generated successfully!', 'success');
+                } else {
+                    showMessage(data.message || 'Error generating QR code', 'error');
+                }
+
+                generateQRBtn.disabled = false;
+                generateQRBtn.innerHTML = '<i class="fas fa-qrcode mr-2"></i>Generate QR Code';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error generating QR code', 'error');
+                generateQRBtn.disabled = false;
+                generateQRBtn.innerHTML = '<i class="fas fa-qrcode mr-2"></i>Generate QR Code';
+            });
+        }
+    });
+
+    function startQRTimer(seconds) {
+        const timer = document.getElementById('qrTimer');
+        const interval = setInterval(function() {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            timer.textContent = `Expires in: ${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+
+            if (seconds <= 0) {
+                clearInterval(interval);
+                timer.textContent = 'QR Code Expired';
+                timer.className = 'text-lg font-semibold text-red-600 mt-2';
+            }
+            seconds--;
+        }, 1000);
+    }
+
+    function showMessage(message, type) {
+        // Create message element
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-md shadow-lg ${
+            type === 'success' ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'
+        }`;
+        messageDiv.innerHTML = `
+            <div class="flex">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mt-0.5 mr-2"></i>
+                <span>${message}</span>
+            </div>
+        `;
+
+        document.body.appendChild(messageDiv);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 5000);
+    }
+
+    // Location method toggle handlers
+    document.getElementById('autoLocation').addEventListener('change', function() {
+        if (this.checked) {
+            document.getElementById('autoLocationDiv').style.display = 'block';
+            document.getElementById('manualLocationDiv').style.display = 'none';
+            document.getElementById('locationStatus').innerHTML = '<i class="fas fa-info-circle mr-1"></i>Click "Generate QR Code" to auto-detect your location';
+        }
+    });
+
+    document.getElementById('manualLocation').addEventListener('change', function() {
+        if (this.checked) {
+            document.getElementById('autoLocationDiv').style.display = 'none';
+            document.getElementById('manualLocationDiv').style.display = 'block';
+        }
+    });
+
+    // Enable/disable location section based on checkbox
+    document.getElementById('enableLocation').addEventListener('change', function() {
+        const locationSection = document.getElementById('locationSection');
+        if (this.checked) {
+            locationSection.style.display = 'block';
+        } else {
+            locationSection.style.display = 'none';
+            document.getElementById('currentCoordinates').textContent = 'Location verification disabled';
+        }
+    });
+
+    // Validate coordinates button
+    document.getElementById('validateLocationBtn').addEventListener('click', function() {
+        const lat = parseFloat(document.getElementById('manualLatitude').value);
+        const lon = parseFloat(document.getElementById('manualLongitude').value);
+        const validation = document.getElementById('locationValidation');
+
+        if (isNaN(lat) || isNaN(lon)) {
+            validation.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Please enter valid numbers</span>';
+            return;
+        }
+
+        if (lat < -90 || lat > 90) {
+            validation.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Latitude must be between -90 and 90</span>';
+            return;
+        }
+
+        if (lon < -180 || lon > 180) {
+            validation.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Longitude must be between -180 and 180</span>';
+            return;
+        }
+
+        validation.innerHTML = '<span class="text-green-600"><i class="fas fa-check mr-1"></i>Valid coordinates</span>';
+        document.getElementById('currentCoordinates').textContent = lat.toFixed(6) + ', ' + lon.toFixed(6) + ' (manual - not saved yet)';
+    });
+
+    // QR Code Download and Share Functions
+    function updateQRInfo() {
+        if (!window.currentQRData) return;
+
+        const data = window.currentQRData;
+        document.getElementById('qrInfoSubject').textContent = data.subject;
+        document.getElementById('qrInfoToken').textContent = data.token;
+        document.getElementById('qrInfoLink').textContent = data.directLink;
+        document.getElementById('qrInfoGenerated').textContent = data.generated;
+        document.getElementById('qrInfoExpires').textContent = data.expiry + ' minutes';
+        document.getElementById('qrInfoLocation').textContent = data.locationRequired ? 'Yes' : 'No';
+    }
+
+    // Download QR Code as Image
+    document.getElementById('downloadQRBtn').addEventListener('click', function() {
+        if (!window.currentQRData) {
+            alert('No QR code available to download');
+            return;
+        }
+
+        const link = document.createElement('a');
+        link.href = window.currentQRData.imageUrl;
+        link.download = `attendance-qr-${window.currentQRData.subject}-${new Date().toISOString().split('T')[0]}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showMessage('QR Code downloaded successfully!', 'success');
+    });
+
+    // Share QR Code
+    document.getElementById('shareQRBtn').addEventListener('click', async function() {
+        if (!window.currentQRData) {
+            alert('No QR code available to share');
+            return;
+        }
+
+        const shareData = {
+            title: `Attendance QR Code - ${window.currentQRData.subject}`,
+            text: `Scan this QR code to mark attendance for ${window.currentQRData.subject}`,
+            url: window.currentQRData.directLink
+        };
+
+        try {
+            if (navigator.share) {
+                // Use native sharing if available
+                await navigator.share(shareData);
+                showMessage('QR Code shared successfully!', 'success');
+            } else {
+                // Fallback: Copy to clipboard
+                await navigator.clipboard.writeText(
+                    `Attendance QR Code - ${window.currentQRData.subject}\n` +
+                    `Direct Link: ${window.currentQRData.directLink}\n` +
+                    `Token: ${window.currentQRData.token}\n` +
+                    `Expires in: ${window.currentQRData.expiry} minutes`
+                );
+                showMessage('QR Code details copied to clipboard!', 'success');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+            showMessage('Unable to share. Please try copying the link instead.', 'error');
+        }
+    });
+
+    // Print QR Code
+    document.getElementById('printQRBtn').addEventListener('click', function() {
+        if (!window.currentQRData) {
+            alert('No QR code available to print');
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        const data = window.currentQRData;
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Attendance QR Code - ${data.subject}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        text-align: center;
+                        padding: 20px;
+                        margin: 0;
+                    }
+                    .qr-container {
+                        border: 2px solid #000;
+                        padding: 20px;
+                        display: inline-block;
+                        margin: 20px;
+                    }
+                    .qr-info {
+                        margin-top: 20px;
+                        text-align: left;
+                        max-width: 400px;
+                        margin-left: auto;
+                        margin-right: auto;
+                    }
+                    .qr-info div {
+                        margin: 5px 0;
+                        padding: 3px 0;
+                        border-bottom: 1px dotted #ccc;
+                    }
+                    .qr-info strong {
+                        display: inline-block;
+                        width: 120px;
+                    }
+                    img {
+                        max-width: 300px;
+                        height: auto;
+                    }
+                    @media print {
+                        body { margin: 0; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>Attendance QR Code</h1>
+                <div class="qr-container">
+                    <img src="${data.imageUrl}" alt="QR Code">
+                </div>
+                <div class="qr-info">
+                    <div><strong>Subject:</strong> ${data.subject}</div>
+                    <div><strong>Token:</strong> ${data.token}</div>
+                    <div><strong>Generated:</strong> ${data.generated}</div>
+                    <div><strong>Expires:</strong> ${data.expiry} minutes</div>
+                    <div><strong>Location Required:</strong> ${data.locationRequired ? 'Yes' : 'No'}</div>
+                    <div><strong>Direct Link:</strong> ${data.directLink}</div>
+                </div>
+                <div class="no-print" style="margin-top: 30px;">
+                    <button onclick="window.print()">Print</button>
+                    <button onclick="window.close()">Close</button>
+                </div>
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+
+        // Auto-print after a short delay
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    });
+
+    // Copy Direct Link
+    document.getElementById('copyLinkBtn').addEventListener('click', async function() {
+        if (!window.currentQRData) {
+            alert('No QR code available');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(window.currentQRData.directLink);
+            showMessage('Direct link copied to clipboard!', 'success');
+        } catch (error) {
+            console.error('Error copying to clipboard:', error);
+
+            // Fallback: Select text method
+            const textArea = document.createElement('textarea');
+            textArea.value = window.currentQRData.directLink;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+
+            showMessage('Direct link copied to clipboard!', 'success');
+        }
+    });
+});
+</script>
+{% endblock custom_js %}
+
+

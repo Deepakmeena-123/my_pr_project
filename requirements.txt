@@ -1,0 +1,27 @@
+# Django and related packages - Updated for Python 3.13 compatibility
+Django==4.2.16
+asgiref==3.8.1
+pytz==2024.2
+sqlparse==0.5.1
+
+# Excel handling - using versions compatible with Python 3.13
+openpyxl==3.1.5
+pandas==2.2.3
+
+# QR code generation and scanning
+qrcode==7.4.2
+pillow==10.4.0
+
+# Computer vision - simplified for deployment
+numpy==2.0.2
+
+# Geolocation
+geopy==2.4.1
+
+# Deployment requirements
+gunicorn==23.0.0
+whitenoise==6.8.2
+
+# Database for deployment
+dj-database-url==2.2.0
+psycopg==3.2.3

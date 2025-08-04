@@ -1,0 +1,148 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Student Management System | Student Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Standardized Admin CSS -->
+  <link rel="stylesheet" href="{% static 'css/admin-standardized.css' %}">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            'sans': ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            primary: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+
+    {% block custom_css %}
+    {% endblock custom_css %}
+
+</head>
+
+<body class="bg-gray-50 font-sans">
+  <div class="flex h-screen">
+
+    <!-- Sidebar -->
+    {% include 'student_template/sidebar_template.html' with user=user id=id %}
+
+    <!-- Main Content Area -->
+    <div class="flex-1 lg:ml-64">
+
+      <!-- Top Navigation Bar -->
+      <header class="bg-white shadow-sm border-b border-gray-200 h-16 flex items-center justify-between px-6">
+
+        <!-- Mobile menu button (visible on mobile) -->
+        <div class="lg:hidden">
+          <button id="mobile-menu-button" class="text-gray-600 hover:text-gray-900">
+            <i class="fas fa-bars text-xl"></i>
+          </button>
+        </div>
+
+        <!-- Page Title -->
+        <div class="flex-1 lg:flex-none">
+          <h1 class="text-xl font-semibold text-gray-900">
+            {% block page_title %}Student Dashboard{% endblock page_title %}
+          </h1>
+        </div>
+
+        <!-- User Menu -->
+        <div class="relative">
+          <button id="user-menu-button" class="flex items-center space-x-3 text-gray-700 hover:text-gray-900 focus:outline-none">
+            <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            <span class="hidden md:block font-medium">{{ user.first_name }}</span>
+            <i class="fas fa-chevron-down text-sm"></i>
+          </button>
+
+          <!-- Dropdown Menu -->
+          <div id="user-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 hidden z-50">
+            <div class="py-2">
+              <a href="{% url 'student_profile' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50">
+                <i class="fas fa-user-edit mr-3"></i>
+                Update Profile
+              </a>
+              <div class="border-t border-gray-100"></div>
+              <a href="{% url 'logout_user' %}" class="flex items-center px-4 py-2 text-red-600 hover:bg-red-50">
+                <i class="fas fa-sign-out-alt mr-3"></i>
+                Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="p-6">
+
+        <!-- Page Content -->
+        {% block main_content %}
+        {% endblock main_content %}
+
+      </main>
+    </div>
+  </div>
+
+  <!-- JavaScript for dropdown functionality -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // User dropdown toggle
+      const userMenuButton = document.getElementById('user-menu-button');
+      const userDropdown = document.getElementById('user-dropdown');
+
+      if (userMenuButton && userDropdown) {
+        userMenuButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          userDropdown.classList.toggle('hidden');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function() {
+          userDropdown.classList.add('hidden');
+        });
+      }
+    });
+  </script>
+
+
+  <!-- Essential JavaScript -->
+  <script src="{% static "jquery/jquery.min.js"  %}"></script>
+  <script src="{% static "chart.js/Chart.min.js"  %}"></script>
+
+  <!-- Chart.js configuration for student dashboard -->
+  <script>
+    // Chart.js default configuration
+    Chart.defaults.global.defaultFontFamily = 'Inter, system-ui, sans-serif';
+    Chart.defaults.global.defaultFontSize = 12;
+    Chart.defaults.global.defaultFontColor = '#374151';
+  </script>
+
+{% block custom_js %}
+{% endblock custom_js %}
+
+</body>
+</html>
