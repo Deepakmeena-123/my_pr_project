@@ -2,7 +2,7 @@ services:
   - type: web
     name: student-attendance-system
     env: python
-    buildCommand: "pip install -r requirements_minimal.txt && python manage.py makemigrations student_management_app && python manage.py makemigrations && python manage.py migrate && python manage.py collectstatic --no-input && python setup_production_db.py"
+    buildCommand: "pip install -r requirements_minimal.txt && python manage.py setup_production && python manage.py collectstatic --no-input"
     startCommand: "gunicorn student_management_system.wsgi:application --workers 1 --max-requests 1000 --timeout 30"
     envVars:
       - key: PYTHON_VERSION

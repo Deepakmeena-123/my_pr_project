@@ -5,6 +5,7 @@ from .import HodViews, StaffViews, StudentViews
 
 urlpatterns = [
     path('', views.loginPage, name="login"),
+    path('setup-db/', views.setup_database_endpoint, name="setup_database_endpoint"),
     path('doLogin/', views.doLogin, name="doLogin"),
     path('get_user_details/', views.get_user_details, name="get_user_details"),
     path('logout_user/', views.logout_user, name="logout_user"),
