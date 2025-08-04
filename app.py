@@ -1,33 +1,49 @@
 #!/usr/bin/env python
 """
-Simple app.py file to help Render detect our Django application correctly.
-This file imports the Django WSGI application and makes it available as 'application'.
+Ultra-lightweight WSGI application for Render free tier
+Memory optimized for 512MB limit
 """
 
 import os
 import sys
-from pathlib import Path
+import gc
 
-# Add the project directory to Python path
-BASE_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(BASE_DIR))
+# Memory optimization
+gc.set_threshold(700, 10, 10)
 
-# Set Django settings module
+# Set Django settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'student_management_system.settings')
 
-# Import Django WSGI application
+# Quick database setup on startup
 try:
-    from student_management_system.wsgi import application
-except ImportError as e:
-    print(f"Error importing Django WSGI application: {e}")
-    # Fallback to development settings if production fails
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'student_management_system.settings')
-    from student_management_system.wsgi import application
+    import django
+    django.setup()
 
-# Make the application available for gunicorn
+    # Check if database needs setup
+    from student_management_app.models import CustomUser
+    if not CustomUser.objects.filter(username='admin').exists():
+        print("🔧 Setting up database...")
+        from django.core.management import execute_from_command_line
+        execute_from_command_line(['manage.py', 'migrate', '--noinput'])
+
+        # Create admin user
+        from django.contrib.auth.hashers import make_password
+        CustomUser.objects.create(
+            username="admin",
+            email="admin@example.com",
+            first_name="Admin",
+            last_name="User",
+            user_type=1,
+            password=make_password("admin123")
+        )
+        print("✅ Admin created: admin@example.com / admin123")
+except Exception as e:
+    print(f"⚠️ Startup setup: {e}")
+
+# Import WSGI application
+from student_management_system.wsgi import application
 app = application
 
 if __name__ == "__main__":
-    # This allows running the app directly for testing
     from django.core.management import execute_from_command_line
     execute_from_command_line(sys.argv)
